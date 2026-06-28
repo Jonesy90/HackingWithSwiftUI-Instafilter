@@ -5,6 +5,15 @@
 //  Created by Michael Jones on 27/06/2026.
 //
 
+/* Challenges
+ 1. Try making the Slider and Change Filter buttons disabled if there is no image selected.
+ 
+ 2. Experiment with having more than one slider, to control each of the input keys you care about. For example, you might have one for radius and one for intensity.
+ 
+ 3. Explore the range of available Core Image filters, and add any three of your choosing to the app.
+ 
+*/
+
 import CoreImage
 import CoreImage.CIFilterBuiltins
 import PhotosUI
@@ -17,6 +26,8 @@ struct ContentView: View {
     
     @State private var processedImage: Image?
     @State private var filterIntensity = 0.5
+    @State private var filterRadius = 3.0
+    @State private var filterScale = 5.0
     
     @State private var selectedItem: PhotosPickerItem?
     
@@ -48,15 +59,40 @@ struct ContentView: View {
                 Spacer()
                 
                 HStack {
-                    Text("Intensity Slider")
-                    Slider(value: $filterIntensity)
-                        .onChange(of: filterIntensity) { oldValue, newValue in
-                            applyProcessing()
+                    VStack {
+                        if currentFilter.inputKeys.contains(kCIInputIntensityKey) {
+                            HStack {
+                                Text("Intensity")
+                                Slider(value: $filterIntensity)
+                                    .onChange(of: filterIntensity, applyProcessing)
+                            }
+                            .disabled(processedImage == nil)
                         }
+                        
+                        if currentFilter.inputKeys.contains(kCIInputRadiusKey) {
+                            HStack {
+                                Text("Radius")
+                                Slider(value: $filterRadius, in: 0...200)
+                                    .onChange(of: filterRadius, applyProcessing)
+                            }
+                            .disabled(processedImage == nil)
+                        }
+                        
+                        if currentFilter.inputKeys.contains(kCIInputScaleKey) {
+                            HStack {
+                                Text("Scale")
+                                Slider(value: $filterScale, in: 0...10)
+                                    .onChange(of: filterScale, applyProcessing)
+                            }
+                            .disabled(processedImage == nil)
+                        }
+                    }
+                    .padding(.vertical)
                 }
                 
                 HStack {
                     Button("Change Filter", action: changeFilter)
+                        .disabled(processedImage == nil)
                     
                     Spacer()
                     
@@ -73,6 +109,9 @@ struct ContentView: View {
                 Button("Gaussian Blur") { setFilter(CIFilter.gaussianBlur()) }
                 Button("Pixellate") { setFilter(CIFilter.pixellate()) }
                 Button("Sepia Tone") { setFilter(CIFilter.sepiaTone()) }
+                Button("Pointillize") { setFilter(CIFilter.pointillize()) }
+                Button("Bloom") { setFilter(CIFilter.bloom()) }
+                Button("Noir") { setFilter(CIFilter.photoEffectNoir()) }
                 Button("Cancel", role: .cancel) { }
             }
         }
@@ -101,11 +140,11 @@ struct ContentView: View {
         }
         
         if inputKeys.contains(kCIInputRadiusKey) {
-            currentFilter.setValue(filterIntensity * 200, forKey: kCIInputRadiusKey)
+            currentFilter.setValue(filterRadius, forKey: kCIInputRadiusKey)
         }
         
         if inputKeys.contains(kCIInputScaleKey) {
-            currentFilter.setValue(filterIntensity * 10, forKey: kCIInputScaleKey)
+            currentFilter.setValue(filterScale, forKey: kCIInputScaleKey)
         }
         
         guard let outputImage = currentFilter.outputImage else { return }
