@@ -121,17 +121,24 @@ struct ContentView: View {
         showingFilters = true
     }
     
+    /// Loads an image the user has picked from their photo library, converts it into a format suitable for apply Core Image filtering.
+    /// Launches an asynchronous task using Swift concurrency, allowing the function to wait asynchronous operations without blocking the UI.
     private func loadImage() {
         Task {
+            /// Takes the photo library image and converts it to a Data type.
             guard let imageData = try await selectedItem?.loadTransferable(type: Data.self) else { return }
+            /// Takes the image (Data type) and converts it into a UIImage.
             guard let inputImage = UIImage(data: imageData) else { return }
             
-            let beginImage = CIImage(image: inputImage) // Converts UIImage to CIImage
+            /// Takes the UIImage and converts it into a CIImage.
+            let beginImage = CIImage(image: inputImage)
+            /// Sets the CIImage as the input for the selected Core Image filter.
             currentFilter.setValue(beginImage, forKey: kCIInputImageKey)
             applyProcessing()
         }
     }
     
+    /// Applies the currently selected Core Image filter with a user-adjusted values for various filters.
     private func applyProcessing() {
         let inputKeys = currentFilter.inputKeys
         
@@ -154,6 +161,7 @@ struct ContentView: View {
         processedImage = Image(uiImage: uiImage)
     }
     
+    /// Function is marked with @MainActor, this means it runs on the main thread (important for UI updates).
     @MainActor private func setFilter(_ filter: CIFilter) {
         currentFilter = filter
         loadImage()
@@ -164,7 +172,6 @@ struct ContentView: View {
             requestReview()
         }
     }
-    
 }
 
 #Preview {
